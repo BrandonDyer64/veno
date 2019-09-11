@@ -52,26 +52,16 @@ class FileWindow(Window):
 			return
 		self.copyLines = []
 		start, end = self.getSelection()
-		index = 0
-		yOffset = len(self.fileLines[:start[1]])
-		# for each line of file, from startY to endY
-		for line in self.fileLines[start[1]:end[1]+1]: # +1 to grab line select ends on and not stop one before it
-			# if start and end on same line (means only one line to process.)
+		for index in range(start[1], end[1]):
+			line = self.fileLines[index]
 			if start[1] == end[1]:
-				self.copyLines = [self.fileLines[index+yOffset][start[0]:end[0]]]
-				#self.toggleSelect()
-				break
-			# elif line is line that select starts on
+				self.copyLines = [line[start[0]:end[0]]]
 			elif start[1] == index+yOffset:
-				self.copyLines.append(self.fileLines[index+yOffset][start[0]:])
-			# elif line is line that select ends on
+				self.copyLines.append(line[start[0]:])
 			elif end[1] == index+yOffset:
-				self.copyLines.append(self.fileLines[index+yOffset][:end[0]])
-			# elif line is between start and end
+				self.copyLines.append(line[:end[0]])
 			else:
-				self.copyLines.append(self.fileLines[index+yOffset])
-
-			index += 1
+				self.copyLines.append(line)
 		if toggle:
 			self.toggleSelect()
 
@@ -158,17 +148,9 @@ class FileWindow(Window):
 	def moveFilecursorDown(self, dist=1):
 		self.moveFilecursor(0, dist)
 	def moveFilecursorLeft(self, dist=1):
-		self.moveFilecursorRight(-dist)
+		self.moveFilecursor(-dist, 0, True)
 	def moveFilecursorRight(self, dist=1):
-		self.filecursor[0] += dist
-		if self.filecursor[0] < 0:
-			self.filecursor[0] = 0
-			self.moveFilecursorUp()
-			self.gotoEndOfLine()
-		if self.filecursor[0] > len(self.fileLines[self.filecursor[1]]):
-			self.moveFilecursorDown()
-			self.gotoStartOfLine()
-		self.moveViewportToCursor()
+		self.moveFilecursor(dist, 0, True)
 	def moveViewportToCursorX(self):
 		tabDiff = len(self.fileLines[self.filecursor[1]][:self.filecursor[0]].expandtabs(self.config["TabExpandSize"])) - len(self.fileLines[self.filecursor[1]][:self.filecursor[0]])
 		cursorX = self.filecursor[0] + tabDiff
@@ -205,18 +187,18 @@ class FileWindow(Window):
 		while wrap and self.filecursor[0] > len(self.fileLines[self.filecursor[1]]):
 			if self.filecursor[1] >= len(self.fileLines):
 				break
-			self.filecursor[0] -= len(self.fileLines[self.filecursor[1]])
+			self.filecursor[0] -= len(self.fileLines[self.filecursor[1]])+1
 			self.filecursor[1] += 1
 		while wrap and self.filecursor[0] < 0:
 			if self.filecursor[1] <= 0:
 				break
 			self.filecursor[1] -= 1
-			self.filecursor[0] += len(self.fileLines[self.filecursor[1]])
-		row = sorted([0, self.filecursor[1], len(self.fileLines)-1])
-		col = sorted([0, self.filecursor[0], len(self.fileLines[row])])
+			self.filecursor[0] += len(self.fileLines[self.filecursor[1]])+1
+		row = sorted([0, self.filecursor[1], len(self.fileLines)-1])[1]
+		col = sorted([0, self.filecursor[0], len(self.fileLines[row])])[1]
 		oldRow, oldCol = self.filecursor
 		self.filecursor = [col, row]
-		return row == oldRow and col == oldCol
+		return row != oldRow or col != oldCol
 	def enterTextAtFilecursor(self, text):
 		if text == "\t" and self.config["TabLength"] != "char":
 			text = " " * self.config["TabLength"]

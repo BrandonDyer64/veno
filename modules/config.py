@@ -26,6 +26,7 @@ class Config:
 					"TabLength": 2
 				}
 			},
+			"ScrollAmount": 20,
 			"ColorMap": {
 				"0": 8,
 				"1": 8,
